@@ -1,0 +1,34 @@
+---
+  - name: Create harbor folder
+    file:
+      path: /opt/harbor
+      state: directory
+      mode: '0755'
+  
+  - name: Download harbor
+    unarchive:
+      src: https://storage.googleapis.com/harbor-releases/release-{{ harbor_version}}/harbor-online-installer-v{{ harbor_version}}.tgz
+      dest: /opt/harbor/
+      remote_src: yes
+
+  - name: Update ipv4 address to access the harbor
+    lineinfile:
+      path: /opt/harbor/harbor/harbor.yml
+      regexp: '^hostname: (.*)$'
+      line: "hostname: {{ ipv4_address }}"
+
+  - name: Update http port
+    lineinfile:
+      path: /opt/harbor/harbor/harbor.yml
+      regexp: '^  port: (.*)$'
+      line: "  port: 1729"
+
+  - name: Run the prepare script
+    command: "./prepare --with-clair --with-chartmuseum"
+    args: 
+      chdir: /opt/harbor/harbor
+
+  - name: Start Harbor
+    command: "docker-compose up -d"
+    args: 
+      chdir: /opt/harbor/harbor
