@@ -32,3 +32,5 @@
     command: "docker-compose up -d"
     args: 
       chdir: /opt/harbor/harbor
+
+  - name: Emit Harbor URL
