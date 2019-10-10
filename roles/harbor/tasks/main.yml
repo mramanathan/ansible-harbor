@@ -33,4 +33,18 @@
     args: 
       chdir: /opt/harbor/harbor
 
+  - name: Check Harbor installation status
+    command: "docker-compose ps"
+    args: 
+      chdir: /opt/harbor/harbor
+    register: compose_ps
+
+  - name: List of active Harbor containers
+    debug: msg="{{ compose_ps.stdout }}"
+
   - name: Emit Harbor URL
+    command: echo "http://{{ ipv4_address }}:1729" 
+    register: harbor_url 
+
+  - name: Harbor URL info
+    debug: msg="{{ harbor_url.stdout }}"
