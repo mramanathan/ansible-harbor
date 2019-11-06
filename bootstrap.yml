@@ -9,12 +9,8 @@
     pre_tasks:
     post_tasks:
     roles:
-      - { role: 'base' }
+      - role: 'base'
       - role: 'docker'
         vars:
           docker_compose_version: 1.24.1
       - role: 'harbor'
-        vars:
-          harbor_version: 1.9.0
-    vars:
-      ipv4_address: "{{ ansible_facts['eth0']['ipv4']['address'] }}"
