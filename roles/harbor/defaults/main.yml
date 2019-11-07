@@ -4,3 +4,6 @@
 harbor_home: /opt/harbor
 harbor_version: 1.9.0
 harbor_port: 1729
+
+harbor_process_owner: harbor
+harbor_process_group: "{{ harbor_process_owner }}"

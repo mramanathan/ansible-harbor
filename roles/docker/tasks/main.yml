@@ -31,6 +31,14 @@
       groups: docker
       append: yes
 
+  - name: Ensure docker_insecure_registry exists
+    file:
+      path: "{{ docker_insecure_registry }}"
+      owner: root
+      group: root
+      mode: '0755'
+      state: directory
+
   - name: Install docker compose
     get_url: 
       url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64"
