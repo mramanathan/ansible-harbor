@@ -1,0 +1,41 @@
+---
+  - name: Allow Ansible to run in the localhost
+    lineinfile:
+      create: yes
+      line: "localhost ansible_connection=local"
+      dest: "/etc/ansible/hosts"
+      mode: 0644
+      owner: root
+      group: root
+
+  - name: Update Ansible config
+    copy:
+      src: "ansible/ansible.cfg"
+      dest: "/etc/ansible/ansible.cfg"
+      mode: 0644
+      owner: root
+      group: root
+
+  - name: Update apt cache
+    apt:
+      upgrade: dist
+      update_cache: yes
+      autoremove: yes
+  
+  - name: Basic packages
+    apt:
+      cache_valid_time: 300
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - git
+      - jq
+      - curl
+      - zip
+      - unzip
+      - apt-transport-https
+      - ca-certificates
+      - gnupg-agent
+      - software-properties-common
+  
+    

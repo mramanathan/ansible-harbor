@@ -1,0 +1,102 @@
+---
+  - name: Create {{ harbor_process_group }} group
+    group:
+      name: "{{ harbor_process_group }}"
+      state: present
+  
+  - name: Create {{ harbor_process_group }} user
+    user:
+      name: "{{ harbor_process_group }}"
+      group: "{{ harbor_process_group }}"
+      create_home: no
+      shell: /bin/false
+      state: present
+  
+  - ec2_metadata_facts:
+    when: harbor_instance is defined and harbor_instance == "aws"
+    no_log: True
+
+  - name: Set public IPv4 address of EC2 in {{ harbor_instance }}
+    set_fact:
+      ipv4_address:  "{{ ansible_ec2_public_ipv4 }}"
+    when: ipv4_address is undefined and harbor_instance == "aws"
+
+  - name: Set public IPv4 address of 'eth0' network interface
+    set_fact:
+      ipv4_address:  "{{ ansible_facts['eth0']['ipv4']['address'] }}"
+    when: ipv4_address is undefined and harbor_instance == "local"
+
+  - name: Check and set home for Harobr installation
+    set_fact:
+      harbor_home="/opt/harbor"
+    when: harbor_home is undefined
+
+  - name: Check and set Harbor port
+    set_fact:
+      harbor_port="1729"
+    when: harbor_port is undefined
+
+  - name: Check for version of Harobr to install
+    set_fact:
+      harbor_version="1.9.0"
+    when: harbor_version is undefined
+
+  - name: Create harbor folder
+    file:
+      path: "{{ harbor_home }}"
+      state: directory
+      mode: '0755'
+      owner: "{{ harbor_process_owner }}"
+      group: "{{ harbor_process_group }}"
+  
+  - name: Download harbor
+    unarchive:
+      src: https://storage.googleapis.com/harbor-releases/release-{{ harbor_version}}/harbor-online-installer-v{{ harbor_version}}.tgz
+      dest: "{{ harbor_home }}"
+      remote_src: yes
+
+  - name: Update ipv4 address to access the harbor
+    lineinfile:
+      path: "{{ harbor_home }}/harbor/harbor.yml"
+      regexp: '^hostname: (.*)$'
+      line: "hostname: {{ ipv4_address }}"
+
+  - name: Update http port
+    lineinfile:
+      path: "{{ harbor_home }}/harbor/harbor.yml"
+      regexp: '^  port: (.*)$'
+      line: "  port: {{ harbor_port }}"
+
+  - name: Bare bone vanilla Harbor, with no add-ons
+    command: "./prepare"
+    args: 
+      chdir: "{{ harbor_home }}/harbor"
+    when: not add_chartmuseum
+
+  - name: Setup Harbor (Docker registry) with support for Helm chart repositories
+    command: "./prepare --with-chartmuseum"
+    args: 
+      chdir: "{{ harbor_home }}/harbor"
+    when: add_chartmuseum
+
+  - name: Start Harbor
+    command: "docker-compose up -d"
+    args: 
+      chdir: "{{ harbor_home }}/harbor"
+    notify: setup insecure registry
+
+  - name: Check Harbor installation status
+    command: "docker-compose ps"
+    args: 
+      chdir: "{{ harbor_home }}/harbor"
+    register: compose_ps
+
+  - name: List of active Harbor containers
+    debug: msg="{{ compose_ps.stdout }}"
+
+  - name: Emit Harbor URL
+    command: echo "Harbor can be accessed at, http://{{ ipv4_address }}:{{ harbor_port }}" 
+    register: harbor_url 
+
+  - name: Harbor URL info
+    debug: msg="{{ harbor_url.stdout }}"
