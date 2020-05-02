@@ -1,26 +1,31 @@
 ---
   - name: Playbook to install Harbor on a system running Ubuntu 18.04
-    hosts: localhost
-    connection: local
+    hosts: harbor-registry
+    gather_facts: true
     become: true
     become_method: sudo
     become_flags: -E
     user: ubuntu
     vars_prompt:
+
+      - name: Choose the version of Harbor to install
+        prompt: "harbor_version"
+        default: "v1.10.2"
+        private: no
+
       - name: Supply credentials for Harbor's admin level access
         prompt: "harbor_admin_passwd"
         default: "Harbor12345"
         private: yes
-        unsafe: yes
+    vars_files:
+      - harbor_external_vars.yml
     vars:
-      - docker_compose_version: 1.24.1
       - add_chartmuseum: true
     pre_tasks:
     post_tasks:
     roles:
-      - role: 'base'
-      - role: 'docker'
+      - { role: 'base' }
+      - { role: 'docker' }
       - role: 'harbor'
         vars:
           docker_insecure_registry: /etc/docker
-          harbor_instance: local

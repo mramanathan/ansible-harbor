@@ -1,0 +1,26 @@
+---
+  - name: Playbook to install Harbor on a system running Ubuntu 18.04
+    hosts: harbor-registry
+    gather_facts: false
+    become: true
+    become_method: sudo
+    become_flags: -E
+    user: ubuntu
+    vars_files:
+      - harbor_core_vars.yml
+    tasks:
+      - name: Stop all Harbor services
+        command: docker-compose down -v
+        args:
+          chdir: "{{ harbor_home }}/harbor/"
+
+      - name: Purge installation dir
+        file:
+          path: "{{ harbor_home }}"
+          state: absent
+
+      - name: Clean Harbor residual data
+        file:
+          path: /data
+          state: absent
+

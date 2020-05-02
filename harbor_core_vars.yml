@@ -1,0 +1,9 @@
+---
+# defaults file for Harbor
+
+harbor_home: "/opt/harbor"
+harbor_port: 1729
+harbor_access: "http"
+
+harbor_process_owner: "harbor"
+harbor_process_group: "{{ harbor_process_owner }}"

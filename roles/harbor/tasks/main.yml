@@ -1,32 +1,47 @@
 ---
-  - name: Create {{ harbor_process_group }} group
+  - name: Create "{{ harbor_process_group }}"  group
     group:
       name: "{{ harbor_process_group }}"
       state: present
   
-  - name: Create {{ harbor_process_group }} user
+  - name: Create "{{ harbor_process_owner }}"  user
     user:
-      name: "{{ harbor_process_group }}"
+      name: "{{ harbor_process_owner }}"
       group: "{{ harbor_process_group }}"
       create_home: no
       shell: /bin/false
       state: present
   
+  - name: Allow Harbor user to run Docker commands without sudo
+    user:
+      name: "{{ harbor_process_owner }}"
+      groups: docker
+      append: yes
+
+  - name: Determine the version of Linux kernel
+    command: uname -r
+    when:
+      - platform_type == "aws"
+      - machine_type  == "ec2"
+    register: linux_kernel
+
   - ec2_metadata_facts:
-    when: harbor_instance is defined and harbor_instance == "aws"
-    no_log: True
+    when: "'aws' in linux_kernel.stdout"
 
-  - name: Set public IPv4 address of EC2 in {{ harbor_instance }}
+  - name: Set public IPv4 address for "{{ machine_type }}" instance in "{{ platform_type }}"
     set_fact:
-      ipv4_address:  "{{ ansible_ec2_public_ipv4 }}"
-    when: ipv4_address is undefined and harbor_instance == "aws"
+      ipv4_address: "{{ ansible_ec2_public_ipv4 }}"
+    when: "'aws' in linux_kernel.stdout"
 
-  - name: Set public IPv4 address of 'eth0' network interface
+  - name: Set public IPv4 address of 'eth1' interface if the VM type is "{{ platform_type }}"
     set_fact:
-      ipv4_address:  "{{ ansible_facts['eth0']['ipv4']['address'] }}"
-    when: ipv4_address is undefined and harbor_instance == "local"
+      ipv4_address:  "{{ ansible_facts['eth1']['ipv4']['address'] }}"
+    when: 
+      - ipv4_address is undefined
+      - platform_type == "local"
+      - machine_type  == "vagrant"
 
-  - name: Check and set home for Harobr installation
+  - name: Check and set home for Harbor installation
     set_fact:
       harbor_home="/opt/harbor"
     when: harbor_home is undefined
@@ -36,9 +51,9 @@
       harbor_port="1729"
     when: harbor_port is undefined
 
-  - name: Check for version of Harobr to install
+  - name: Check for version of Harbor to install
     set_fact:
-      harbor_version="1.9.0"
+      harbor_version="1.10.2"
     when: harbor_version is undefined
 
   - name: Create harbor folder
@@ -51,7 +66,7 @@
   
   - name: Download harbor
     unarchive:
-      src: https://storage.googleapis.com/harbor-releases/release-{{ harbor_version}}/harbor-online-installer-v{{ harbor_version}}.tgz
+      src: https://github.com/goharbor/harbor/releases/download/v{{ harbor_version}}/harbor-online-installer-v{{ harbor_version}}.tgz
       dest: "{{ harbor_home }}"
       remote_src: yes
 
@@ -64,20 +79,54 @@
   - name: Update http port
     lineinfile:
       path: "{{ harbor_home }}/harbor/harbor.yml"
-      regexp: '^  port: (.*)$'
+      regexp: '^  port: 80$'
       line: "  port: {{ harbor_port }}"
+
+  - name: Disable https
+    replace:
+      path: "{{ harbor_home }}/harbor/harbor.yml"
+      regexp: '^https:(.*)'
+      replace: '#\1'
+    when:
+      - harbor_access == "http"
+
+  - name: Disable https port
+    replace:
+      path: "{{ harbor_home }}/harbor/harbor.yml"
+      regexp: '(.*port: 443.*)'
+      replace: '#\1'
+    when:
+      - harbor_access == "http"
+
+  - name: Disable certifacte entry
+    replace:
+      path: "{{ harbor_home }}/harbor/harbor.yml"
+      regexp: '(.*certificate:.*)'
+      replace: '#\1'
+    when:
+      - harbor_access == "http"
+
+  - name: Disable private key entry
+    replace:
+      path: "{{ harbor_home }}/harbor/harbor.yml"
+      regexp: '(.*private_key:.*)'
+      replace: '#\1'
+    when:
+      - harbor_access == "http"
 
   - name: Bare bone vanilla Harbor, with no add-ons
     command: "./prepare"
     args: 
       chdir: "{{ harbor_home }}/harbor"
-    when: not add_chartmuseum
+    when:
+      - not add_chartmuseum
 
   - name: Setup Harbor (Docker registry) with support for Helm chart repositories
     command: "./prepare --with-chartmuseum"
     args: 
       chdir: "{{ harbor_home }}/harbor"
-    when: add_chartmuseum
+    when:
+      - add_chartmuseum
 
   - name: Start Harbor
     command: "docker-compose up -d"
@@ -95,8 +144,8 @@
     debug: msg="{{ compose_ps.stdout }}"
 
   - name: Emit Harbor URL
-    command: echo "Harbor can be accessed at, http://{{ ipv4_address }}:{{ harbor_port }}" 
-    register: harbor_url 
+    command: echo "Harbor can be accessed at, http://{{ ipv4_address }}:{{ harbor_port }}"
+    register: harbor_url
 
   - name: Harbor URL info
     debug: msg="{{ harbor_url.stdout }}"
