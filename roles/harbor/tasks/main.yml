@@ -18,20 +18,18 @@
       groups: docker
       append: yes
 
-  - name: Determine the version of Linux kernel
-    command: uname -r
-    when:
+  - ec2_metadata_facts:
+    when: 
       - platform_type == "aws"
       - machine_type  == "ec2"
-    register: linux_kernel
-
-  - ec2_metadata_facts:
-    when: "'aws' in linux_kernel.stdout"
 
   - name: Set public IPv4 address for "{{ machine_type }}" instance in "{{ platform_type }}"
     set_fact:
       ipv4_address: "{{ ansible_ec2_public_ipv4 }}"
-    when: "'aws' in linux_kernel.stdout"
+    when:
+      - ipv4_address is undefined
+      - platform_type == "aws"
+      - machine_type  == "ec2"
 
   - name: Set public IPv4 address of 'eth1' interface if the VM type is "{{ platform_type }}"
     set_fact:

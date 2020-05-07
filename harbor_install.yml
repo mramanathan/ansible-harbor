@@ -19,6 +19,7 @@
         private: yes
     vars_files:
       - harbor_external_vars.yml
+      - harbor_core_vars.yml
     vars:
       - add_chartmuseum: true
     pre_tasks:
