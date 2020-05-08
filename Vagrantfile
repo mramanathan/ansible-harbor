@@ -25,4 +25,12 @@ Vagrant.configure(VAGRANT_API) do |config|
     sudo apt-get install -y python3-pip
     sudo -H pip3 install ansible
   SHELL
+
+  config.vm.provision "shell", inline: <<-SHELL
+    git clone -b harbor https://github.com/mramanathan/ansible-harbor
+  SHELL
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "ansible-harbor/harbor_install.yml"
+  end
 end
