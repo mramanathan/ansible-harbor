@@ -31,6 +31,6 @@ Vagrant.configure(VAGRANT_API) do |config|
   SHELL
 
   config.vm.provision "ansible" do |ansible|
-    ansible.playbook = "ansible-harbor/harbor_install.yml"
+    ansible.playbook = "harbor_install.yml"
   end
 end
