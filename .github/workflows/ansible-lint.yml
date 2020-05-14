@@ -25,8 +25,8 @@ jobs:
         #   playbook_2.yml
         targets: "./"
         # [optional]
-	override-deps: |
-	  ansible=2.9.8
+        override-deps: |
+          ansible=2.9.8
           ansible-lint=4.2.0
         # Arguments to be passed to the ansible-lint
 
