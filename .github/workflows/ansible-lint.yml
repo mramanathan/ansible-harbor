@@ -1,4 +1,4 @@
-name: Run ansible-lint on playbooks and tasks
+name: Ansible Lint
 
 on: [push]
 
@@ -24,9 +24,6 @@ jobs:
         #   playbook_2.yml
         targets: "./"
         # [optional]
-        override-deps: |
-          ansible==2.9.8
-          ansible-lint==4.2.0
         # Arguments to be passed to the ansible-lint
 
         # Options:
@@ -48,4 +45,4 @@ jobs:
         #                         path to directories or files to skip. This option is
         #                         repeatable.
         #   -c C                  Specify configuration file to use. Defaults to ".ansible-lint"
-        args: "-q"
+        args: ""
