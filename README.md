@@ -1,3 +1,5 @@
+![Ansible Lint](https://github.com/mramanathan/ansible-harbor/workflows/Ansible%20Lint/badge.svg?branch=harbor&event=push)
+
 # ansible-harbor
 Set of Ansible playbooks that can be used to manage (un)installation of Harbor.
 
