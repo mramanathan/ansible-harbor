@@ -20,7 +20,7 @@
     apt:
       update_cache: yes
       autoremove: yes
-  
+
   - name: Basic packages
     apt:
       cache_valid_time: 300
@@ -36,5 +36,3 @@
       - ca-certificates
       - gnupg-agent
       - software-properties-common
-  
-    

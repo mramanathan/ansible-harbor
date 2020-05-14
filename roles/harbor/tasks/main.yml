@@ -3,7 +3,7 @@
     group:
       name: "{{ harbor_process_group }}"
       state: present
-  
+
   - name: Create "{{ harbor_process_owner }}"  user
     user:
       name: "{{ harbor_process_owner }}"
@@ -11,15 +11,16 @@
       create_home: no
       shell: /bin/false
       state: present
-  
+
   - name: Allow Harbor user to run Docker commands without sudo
     user:
       name: "{{ harbor_process_owner }}"
       groups: docker
       append: yes
 
-  - ec2_metadata_facts:
-    when: 
+  - name: Gather facts on EC2
+    ec2_metadata_facts:
+    when:
       - platform_type == "aws"
       - machine_type  == "ec2"
 
@@ -34,7 +35,7 @@
   - name: Set public IPv4 address of 'eth1' interface if the VM type is "{{ platform_type }}"
     set_fact:
       ipv4_address:  "{{ ansible_facts['eth1']['ipv4']['address'] }}"
-    when: 
+    when:
       - ipv4_address is undefined
       - platform_type == "local"
       - machine_type  == "vagrant"
@@ -61,10 +62,10 @@
       mode: '0755'
       owner: "{{ harbor_process_owner }}"
       group: "{{ harbor_process_group }}"
-  
+
   - name: Download harbor
     unarchive:
-      src: https://github.com/goharbor/harbor/releases/download/v{{ harbor_version}}/harbor-online-installer-v{{ harbor_version}}.tgz
+      src: https://github.com/goharbor/harbor/releases/download/v{{ harbor_version}}/harbor-online-installer-v{{ harbor_version }}.tgz
       dest: "{{ harbor_home }}"
       remote_src: yes
 
@@ -114,28 +115,32 @@
 
   - name: Bare bone vanilla Harbor, with no add-ons
     command: "./prepare"
-    args: 
+    args:
       chdir: "{{ harbor_home }}/harbor"
     when:
       - not add_chartmuseum
 
   - name: Setup Harbor (Docker registry) with support for Helm chart repositories
     command: "./prepare --with-chartmuseum"
-    args: 
+    args:
       chdir: "{{ harbor_home }}/harbor"
     when:
       - add_chartmuseum
+    register: harbor_prepare
 
   - name: Start Harbor
-    command: "docker-compose up -d"
-    args: 
-      chdir: "{{ harbor_home }}/harbor"
+    docker_compose:
+      project_src: "{{ harbor_home }}/harbor"
+      state: present
     notify: setup insecure registry
+    when: harbor_prepare.changed
+    register: compose_up
 
   - name: Check Harbor installation status
-    command: "docker-compose ps"
-    args: 
+    shell: "docker-compose ps"
+    args:
       chdir: "{{ harbor_home }}/harbor"
+    when: compose_up.changed
     register: compose_ps
 
   - name: List of active Harbor containers
@@ -143,6 +148,7 @@
 
   - name: Emit Harbor URL
     command: echo "Harbor can be accessed at, http://{{ ipv4_address }}:{{ harbor_port }}"
+    when: compose_up.changed
     register: harbor_url
 
   - name: Harbor URL info

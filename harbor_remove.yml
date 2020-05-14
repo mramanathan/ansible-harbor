@@ -1,5 +1,5 @@
 ---
-  - name: Playbook to install Harbor on a system running Ubuntu 18.04
+  - name: Playbook to remove the Harbor installation
     hosts: harbor-registry
     gather_facts: false
     become: true
@@ -10,17 +10,21 @@
       - harbor_core_vars.yml
     tasks:
       - name: Stop all Harbor services
-        command: docker-compose down -v
-        args:
-          chdir: "{{ harbor_home }}/harbor/"
+        docker_compose:
+          project_src: "{{ harbor_home }}/harbor/"
+          state: absent
+          remove_volumes: yes
+        register: compose_down
 
       - name: Purge installation dir
         file:
           path: "{{ harbor_home }}"
           state: absent
+        when: compose_down.changed
+        register: purge_dir
 
       - name: Clean Harbor residual data
         file:
           path: /data
           state: absent
-
+        when: purge_dir.changed

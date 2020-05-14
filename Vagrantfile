@@ -22,8 +22,10 @@ Vagrant.configure(VAGRANT_API) do |config|
   config.vm.provision "shell", inline: <<-SHELL
     hostnamectl set-hostname harbor-registry
     sudo apt-get update
-    sudo apt-get install -y python3-pip
-    sudo -H pip3 install ansible
+    sudo apt-get install -y python-apt
+    sudo apt-get install -y python-pip
+    sudo -H pip install ansible
+    sudo -H pip install docker-compose
   SHELL
 
   config.vm.provision "shell", inline: <<-SHELL

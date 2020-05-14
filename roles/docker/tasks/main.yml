@@ -24,12 +24,24 @@
       name: docker
       state: started
       enabled: yes
-  
-  - name: Permit 'ubuntu' user to access Docker socket
+
+  - name: Allow 'ubuntu' user to access Docker socket
     user:
       name: ubuntu
       groups: docker
       append: yes
+    when:
+      - platform_type = "aws"
+      - machine_type  = "ec2"
+
+  - name: Allow 'vagrant' user to access Docker socket
+    user:
+      name: vagrant
+      groups: docker
+      append: yes
+    when:
+      - platform_type = "local"
+      - machine_type  = "vagrant"
 
   - name: Ensure docker_insecure_registry exists
     file:
@@ -40,7 +52,7 @@
       state: directory
 
   - name: Install docker compose
-    get_url: 
+    get_url:
       url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64"
       dest: /usr/local/bin/docker-compose
       owner: root
