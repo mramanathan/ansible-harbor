@@ -8,7 +8,7 @@ Vagrant.configure(VAGRANT_API) do |config|
     harbor.vm.box = "bento/ubuntu-18.04"
     harbor.vm.box_check_update = false
     harbor.vm.hostname = "harbor-registry"
-    harbor.vm.network "private_network", ip: "192.168.5.90"
+    harbor.vm.network "private_network", ip: "172.132.32.101"
     harbor.vm.network "forwarded_port", guest: 1729, host: 1729, host_ip: "0.0.0.0"
   end
 

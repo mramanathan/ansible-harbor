@@ -31,8 +31,8 @@
       groups: docker
       append: yes
     when:
-      - platform_type = "aws"
-      - machine_type  = "ec2"
+      - platform_type == "aws"
+      - machine_type  == "ec2"
 
   - name: Allow 'vagrant' user to access Docker socket
     user:
@@ -40,8 +40,8 @@
       groups: docker
       append: yes
     when:
-      - platform_type = "local"
-      - machine_type  = "vagrant"
+      - platform_type == "local"
+      - machine_type  == "vagrant"
 
   - name: Ensure docker_insecure_registry exists
     file:
