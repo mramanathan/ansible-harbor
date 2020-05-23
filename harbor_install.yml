@@ -10,7 +10,7 @@
 
       - name: Choose the version of Harbor to install
         prompt: "harbor_version"
-        default: "v1.10.2"
+        default: "v2.0.0"
         private: no
 
       - name: Supply credentials for Harbor's admin level access
@@ -20,8 +20,6 @@
     vars_files:
       - harbor_external_vars.yml
       - harbor_core_vars.yml
-    vars:
-      - add_chartmuseum: true
     pre_tasks:
     post_tasks:
     roles:

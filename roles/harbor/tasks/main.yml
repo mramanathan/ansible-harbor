@@ -52,7 +52,7 @@
 
   - name: Check for version of Harbor to install
     set_fact:
-      harbor_version="1.10.2"
+      harbor_version="2.0.0"
     when: harbor_version is undefined
 
   - name: Create harbor folder
@@ -68,6 +68,12 @@
       src: https://github.com/goharbor/harbor/releases/download/v{{ harbor_version}}/harbor-online-installer-v{{ harbor_version }}.tgz
       dest: "{{ harbor_home }}"
       remote_src: yes
+
+  - name: Copy harbor.yml.tmpl to harbory.yml
+    synchronize:
+      src: "{{ harbor_home }}/harbor/harbor.yml.tmpl"
+      dest: "{{ harbor_home }}/harbor/harbor.yml"
+    delegate_to: "{{ inventory_hostname }}"
 
   - name: Update ipv4 address to access the harbor
     lineinfile:
@@ -117,15 +123,6 @@
     command: "./prepare"
     args:
       chdir: "{{ harbor_home }}/harbor"
-    when:
-      - not add_chartmuseum
-
-  - name: Setup Harbor (Docker registry) with support for Helm chart repositories
-    command: "./prepare --with-chartmuseum"
-    args:
-      chdir: "{{ harbor_home }}/harbor"
-    when:
-      - add_chartmuseum
     register: harbor_prepare
 
   - name: Start Harbor
